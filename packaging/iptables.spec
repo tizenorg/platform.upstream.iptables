@@ -13,7 +13,6 @@ Url:            http://netfilter.org/
 #Git-Web:	http://git.netfilter.org/
 #Git-Clone:	git://git.netfilter.org/iptables
 Source:         ftp://ftp.netfilter.org/pub/iptables/%{name}-%{version}.tar.bz2
-Source2:        ftp://ftp.netfilter.org/pub/iptables/%{name}-%{version}.tar.bz2.sig
 BuildRequires:  fdupes
 BuildRequires:  libtool
 BuildRequires:  pkgconfig >= 0.21
