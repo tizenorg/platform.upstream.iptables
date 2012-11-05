@@ -1,21 +1,3 @@
-#
-# spec file for package iptables
-#
-# Copyright (c) 2012 SUSE LINUX Products GmbH, Nuernberg, Germany.
-#
-# All modifications and additions to the file contributed by third parties
-# remain the property of their copyright owners, unless otherwise agreed
-# upon. The license for this file, and modifications and additions to the
-# file, is the same license as for the pristine package itself (unless the
-# license for the pristine package is not an Open Source License, in which
-# case the license is the MIT License). An "Open Source License" is a
-# license that conforms to the Open Source Definition (Version 1.9)
-# published by the Open Source Initiative.
-
-# Please submit bugfixes or comments via http://bugs.opensuse.org/
-#
-
-
 Name:           iptables
 %define lname_ipq	libipq
 %define lname_iptc	libiptc
@@ -32,13 +14,10 @@ Url:            http://netfilter.org/
 #Git-Clone:	git://git.netfilter.org/iptables
 Source:         ftp://ftp.netfilter.org/pub/iptables/%{name}-%{version}.tar.bz2
 Source2:        ftp://ftp.netfilter.org/pub/iptables/%{name}-%{version}.tar.bz2.sig
-Patch1:         iptables-batch.patch
-Patch2:         iptables-apply-mktemp-fix.patch
 BuildRequires:  fdupes
 BuildRequires:  libtool
 BuildRequires:  pkgconfig >= 0.21
 BuildRequires:  pkgconfig(libnfnetlink) >= 1.0.0
-BuildRoot:      %{_tmppath}/%{name}-%{version}-build
 
 %description
 iptables is used to set up, maintain, and inspect the tables of IP
@@ -115,19 +94,9 @@ Link your extension (iptables plugins) with $(pkg-config xtables
 xtables --variable=xtlibdir).
 
 %prep
-%if 0%{?__xz:1}
 %setup -q
-%else
-tar -xf "%{SOURCE0}" --use=bzip2;
-%setup -DTq
-%endif
-%patch1 -p1
-%patch2 -p1
 
 %build
-if [ ! -e configure ]; then
-	./autogen.sh;
-fi
 # bnc#561793 - do not include unclean module in iptables manpage
 rm -f extensions/libipt_unclean.man
 # includedir is overriden on purpose to detect projects that
@@ -155,11 +124,12 @@ rm -f "%{buildroot}/%{_libdir}"/*.la;
 
 %postun -n %lname_xt -p /sbin/ldconfig
 
+
+%docs_package
+
 %files
 %defattr(-,root,root)
 %doc COPYING
-%doc %{_mandir}/man1/*
-%doc %{_mandir}/man8/*
 %{_bindir}/iptables*
 %{_sbindir}/iptables*
 %{_sbindir}/ip6tables*
@@ -174,8 +144,6 @@ rm -f "%{buildroot}/%{_libdir}"/*.la;
 
 %files -n libipq-devel
 %defattr(-,root,root)
-%doc %{_mandir}/man3/libipq*
-%doc %{_mandir}/man3/ipq*
 %dir %{_includedir}/%{name}-%{version}
 %{_includedir}/%{name}-%{version}/libipq*
 %{_libdir}/libipq.so
