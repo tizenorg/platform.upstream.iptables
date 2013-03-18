@@ -6,12 +6,9 @@ Version:        1.4.14
 Release:        0
 License:        GPL-2.0+
 Summary:        IP Packet Filter Administration utilities
-Group:          Productivity/Networking/Security
+Group:          Security/Network
 
 Url:            http://netfilter.org/
-#DL-URL:	ftp://ftp.netfilter.org/pub/iptables/
-#Git-Web:	http://git.netfilter.org/
-#Git-Clone:	git://git.netfilter.org/iptables
 Source:         ftp://ftp.netfilter.org/pub/iptables/%{name}-%{version}.tar.bz2
 BuildRequires:  fdupes
 BuildRequires:  libtool
@@ -25,7 +22,7 @@ packet filter rules in the Linux kernel. This version requires kernel
 
 %package -n %lname_ipq
 Summary:        Library to interface with the (old) ip_queue kernel mechanism
-Group:          System/Libraries
+Group:          Security/Network
 
 %description -n %lname_ipq
 The Netfilter project provides a mechanism (ip_queue) for passing
@@ -38,7 +35,7 @@ ip_queue/libipq is obsoleted by nf_queue/libnetfilter_queue!
 
 %package -n libipq-devel
 Summary:        Development files for the ip_queue kernel mechanism
-Group:          Development/Libraries/C and C++
+Group:          Development/Libraries
 Requires:       %lname_ipq = %{version}
 
 %description -n libipq-devel
@@ -52,7 +49,7 @@ ip_queue/libipq is obsoleted by nf_queue/libnetfilter_queue!
 
 %package -n %lname_iptc
 Summary:        Library for low-level ruleset generation and parsing
-Group:          System/Libraries
+Group:          Security/Network
 
 %description -n %lname_iptc
 libiptc ("iptables cache") is used to retrieve from the kernel, parse,
@@ -60,7 +57,7 @@ construct, and load new rulesets into the kernel.
 
 %package -n libiptc-devel
 Summary:        Development files for libiptc, a packet filter ruleset library
-Group:          Development/Libraries/C and C++
+Group:          Development/Libraries
 Requires:       %lname_iptc = %{version}
 # NOT adding Obsoletes/Provides: iptables-devel, because that one has
 # been split into _two_ new pkgs (libxtables-devel, libiptc-devel).
@@ -72,7 +69,7 @@ construct, and load new rulesets into the kernel.
 
 %package -n %lname_xt
 Summary:        iptables extension interface
-Group:          System/Libraries
+Group:          Security/Network
 
 %description -n %lname_xt
 This library contains all the iptables code shared between iptables,
@@ -81,7 +78,7 @@ iproute2's m_xt.
 
 %package -n libxtables-devel
 Summary:        Libraries, Headers and Development Man Pages for iptables
-Group:          Development/Libraries/C and C++
+Group:          Development/Libraries
 Requires:       %lname_xt = %{version}
 
 %description -n libxtables-devel
@@ -128,7 +125,7 @@ rm -f "%{buildroot}/%{_libdir}"/*.la;
 
 %files
 %defattr(-,root,root)
-%doc COPYING
+%license COPYING
 %{_bindir}/iptables*
 %{_sbindir}/iptables*
 %{_sbindir}/ip6tables*
