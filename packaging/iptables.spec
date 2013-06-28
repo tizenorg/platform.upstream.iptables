@@ -10,6 +10,7 @@ Group:          Security/Network
 
 Url:            http://netfilter.org/
 Source:         ftp://ftp.netfilter.org/pub/iptables/%{name}-%{version}.tar.bz2
+Source1001: 	iptables.manifest
 BuildRequires:  fdupes
 BuildRequires:  libtool
 BuildRequires:  pkgconfig >= 0.21
@@ -91,6 +92,7 @@ xtables --variable=xtlibdir).
 
 %prep
 %setup -q
+cp %{SOURCE1001} .
 
 %build
 # bnc#561793 - do not include unclean module in iptables manpage
@@ -124,6 +126,7 @@ rm -f "%{buildroot}/%{_libdir}"/*.la;
 %docs_package
 
 %files
+%manifest %{name}.manifest
 %defattr(-,root,root)
 %license COPYING
 %{_bindir}/iptables*
@@ -135,10 +138,12 @@ rm -f "%{buildroot}/%{_libdir}"/*.la;
 %{_datadir}/xtables
 
 %files -n %lname_ipq
+%manifest %{name}.manifest
 %defattr(-,root,root)
 %{_libdir}/libipq.so.0*
 
 %files -n libipq-devel
+%manifest %{name}.manifest
 %defattr(-,root,root)
 %dir %{_includedir}/%{name}-%{version}
 %{_includedir}/%{name}-%{version}/libipq*
@@ -146,12 +151,14 @@ rm -f "%{buildroot}/%{_libdir}"/*.la;
 %{_libdir}/pkgconfig/libipq.pc
 
 %files -n %lname_iptc
+%manifest %{name}.manifest
 %defattr(-,root,root)
 %{_libdir}/libiptc.so.0*
 %{_libdir}/libip4tc.so.0*
 %{_libdir}/libip6tc.so.0*
 
 %files -n libiptc-devel
+%manifest %{name}.manifest
 %defattr(-,root,root)
 %dir %{_includedir}/%{name}-%{version}
 %{_includedir}/%{name}-%{version}/libiptc*
@@ -159,10 +166,12 @@ rm -f "%{buildroot}/%{_libdir}"/*.la;
 %{_libdir}/pkgconfig/libip*tc.pc
 
 %files -n %lname_xt
+%manifest %{name}.manifest
 %defattr(-,root,root)
 %{_libdir}/libxtables.so.7*
 
 %files -n libxtables-devel
+%manifest %{name}.manifest
 %defattr(-,root,root)
 %dir %{_includedir}/%{name}-%{version}
 %{_includedir}/%{name}-%{version}/xtables.h
