@@ -31,8 +31,7 @@
 #define IPPROTO_UDPLITE	136
 #endif
 
-#define XTABLES_VERSION "libxtables.so.@libxtables_vmajor@"
-#define XTABLES_VERSION_CODE @libxtables_vmajor@
+#include <xtables-version.h>
 
 struct in_addr;
 
@@ -202,6 +201,10 @@ struct xtables_lmap {
 	struct xtables_lmap *next;
 };
 
+enum xtables_ext_flags {
+	XTABLES_EXT_ALIAS = 1 << 0,
+};
+
 /* Include file for additions: new matches and targets. */
 struct xtables_match
 {
@@ -214,9 +217,13 @@ struct xtables_match
 	struct xtables_match *next;
 
 	const char *name;
+	const char *real_name;
 
 	/* Revision of match (0 by default). */
 	u_int8_t revision;
+
+	/* Extension flags */
+	u_int8_t ext_flags;
 
 	u_int16_t family;
 
@@ -251,6 +258,9 @@ struct xtables_match
 	/* ip is struct ipt_ip * for example */
 	void (*save)(const void *ip, const struct xt_entry_match *match);
 
+	/* Print match name or alias */
+	const char *(*alias)(const struct xt_entry_match *match);
+
 	/* Pointer to list of extra command-line options */
 	const struct option *extra_opts;
 
@@ -283,8 +293,14 @@ struct xtables_target
 
 	const char *name;
 
+	/* Real target behind this, if any. */
+	const char *real_name;
+
 	/* Revision of target (0 by default). */
 	u_int8_t revision;
+
+	/* Extension flags */
+	u_int8_t ext_flags;
 
 	u_int16_t family;
 
@@ -318,6 +334,9 @@ struct xtables_target
 	/* Saves the targinfo in parsable form to stdout. */
 	void (*save)(const void *ip,
 		     const struct xt_entry_target *target);
+
+	/* Print target name or alias */
+	const char *(*alias)(const struct xt_entry_target *target);
 
 	/* Pointer to list of extra command-line options */
 	const struct option *extra_opts;
@@ -414,6 +433,8 @@ extern struct xtables_match *xtables_find_match(const char *name,
 extern struct xtables_target *xtables_find_target(const char *name,
 	enum xtables_tryload);
 
+extern void xtables_rule_matches_free(struct xtables_rule_match **matches);
+
 /* Your shared library should call one of these. */
 extern void xtables_register_match(struct xtables_match *me);
 extern void xtables_register_matches(struct xtables_match *, unsigned int);
@@ -442,6 +463,7 @@ extern const char *xtables_ipaddr_to_anyname(const struct in_addr *);
 extern const char *xtables_ipmask_to_numeric(const struct in_addr *);
 extern struct in_addr *xtables_numeric_to_ipaddr(const char *);
 extern struct in_addr *xtables_numeric_to_ipmask(const char *);
+extern int xtables_ipmask_to_cidr(const struct in_addr *);
 extern void xtables_ipparse_any(const char *, struct in_addr **,
 	struct in_addr *, unsigned int *);
 extern void xtables_ipparse_multiple(const char *, struct in_addr **,
@@ -451,6 +473,7 @@ extern struct in6_addr *xtables_numeric_to_ip6addr(const char *);
 extern const char *xtables_ip6addr_to_numeric(const struct in6_addr *);
 extern const char *xtables_ip6addr_to_anyname(const struct in6_addr *);
 extern const char *xtables_ip6mask_to_numeric(const struct in6_addr *);
+extern int xtables_ip6mask_to_cidr(const struct in6_addr *);
 extern void xtables_ip6parse_any(const char *, struct in6_addr **,
 	struct in6_addr *, unsigned int *);
 extern void xtables_ip6parse_multiple(const char *, struct in6_addr **,
@@ -461,6 +484,22 @@ extern void xtables_ip6parse_multiple(const char *, struct in6_addr **,
  * characters if required.
  */
 extern void xtables_save_string(const char *value);
+
+#define FMT_NUMERIC		0x0001
+#define FMT_NOCOUNTS		0x0002
+#define FMT_KILOMEGAGIGA	0x0004
+#define FMT_OPTIONS		0x0008
+#define FMT_NOTABLE		0x0010
+#define FMT_NOTARGET		0x0020
+#define FMT_VIA			0x0040
+#define FMT_NONEWLINE		0x0080
+#define FMT_LINENUMBERS		0x0100
+
+#define FMT_PRINT_RULE (FMT_NOCOUNTS | FMT_OPTIONS | FMT_VIA \
+                        | FMT_NUMERIC | FMT_NOTABLE)
+#define FMT(tab,notab) ((format) & FMT_NOTABLE ? (notab) : (tab))
+
+extern void xtables_print_num(uint64_t number, unsigned int format);
 
 #if defined(ALL_INCLUSIVE) || defined(NO_SHARED_LIBS)
 #	ifdef _INIT

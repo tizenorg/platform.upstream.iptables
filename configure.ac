@@ -1,8 +1,8 @@
 
-AC_INIT([iptables], [1.4.14])
+AC_INIT([iptables], [1.4.19.1])
 
 # See libtool.info "Libtool's versioning system"
-libxtables_vcurrent=7
+libxtables_vcurrent=10
 libxtables_vage=0
 
 AC_CONFIG_AUX_DIR([build-aux])
@@ -13,6 +13,7 @@ AM_INIT_AUTOMAKE([-Wall])
 AC_PROG_CC
 AM_PROG_CC_C_O
 AC_DISABLE_STATIC
+m4_ifdef([AM_PROG_AR], [AM_PROG_AR])
 AM_PROG_LIBTOOL
 
 AC_ARG_WITH([kernel],
@@ -49,6 +50,9 @@ AC_ARG_ENABLE([devel],
 	[enable_devel="$enableval"], [enable_devel="yes"])
 AC_ARG_ENABLE([libipq],
 	AS_HELP_STRING([--enable-libipq], [Build and install libipq]))
+AC_ARG_ENABLE([bpf-compiler],
+	AS_HELP_STRING([--enable-bpf-compiler], [Build bpf compiler]),
+	[enable_bpfc="yes"])
 AC_ARG_WITH([pkgconfigdir], AS_HELP_STRING([--with-pkgconfigdir=PATH],
 	[Path to the pkgconfig directory [[LIBDIR/pkgconfig]]]),
 	[pkgconfigdir="$withval"], [pkgconfigdir='${libdir}/pkgconfig'])
@@ -87,6 +91,7 @@ AM_CONDITIONAL([ENABLE_IPV6], [test "$enable_ipv6" = "yes"])
 AM_CONDITIONAL([ENABLE_LARGEFILE], [test "$enable_largefile" = "yes"])
 AM_CONDITIONAL([ENABLE_DEVEL], [test "$enable_devel" = "yes"])
 AM_CONDITIONAL([ENABLE_LIBIPQ], [test "$enable_libipq" = "yes"])
+AM_CONDITIONAL([ENABLE_BPFC], [test "$enable_bpfc" = "yes"])
 
 PKG_CHECK_MODULES([libnfnetlink], [libnfnetlink >= 1.0],
 	[nfnetlink=1], [nfnetlink=0])
@@ -126,5 +131,5 @@ AC_CONFIG_FILES([Makefile extensions/GNUmakefile include/Makefile
 	libiptc/Makefile libiptc/libiptc.pc
 	libiptc/libip4tc.pc libiptc/libip6tc.pc
 	libxtables/Makefile utils/Makefile
-	include/xtables.h include/iptables/internal.h])
+	include/xtables-version.h include/iptables/internal.h])
 AC_OUTPUT

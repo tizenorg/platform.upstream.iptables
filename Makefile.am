@@ -10,9 +10,7 @@ endif
 if ENABLE_LIBIPQ
 SUBDIRS         += libipq
 endif
-if HAVE_LIBNFNETLINK
 SUBDIRS         += utils
-endif
 # Depends on libxtables:
 SUBDIRS         += extensions
 # Depends on extensions/libext.a:
@@ -26,5 +24,9 @@ tarball:
 	tar -C /tmp -cjf ${PACKAGE_TARNAME}-${PACKAGE_VERSION}.tar.bz2 --owner=root --group=root ${PACKAGE_TARNAME}-${PACKAGE_VERSION}/;
 	rm -Rf /tmp/${PACKAGE_TARNAME}-${PACKAGE_VERSION};
 
+install-data-hook:
+	@mkdir -p -m 755 $(DESTDIR)/etc/xtables/ || :
+	@test -f /etc/xtables/connlabel.conf || $(INSTALL) -m 644 etc/xtables/connlabel.conf $(DESTDIR)/etc/xtables/connlabel.conf || :
+
 config.status: extensions/GNUmakefile.in \
-	include/xtables.h.in include/iptables/internal.h.in
+	include/xtables-version.h.in include/iptables/internal.h.in

@@ -862,14 +862,77 @@ void xtables_register_match(struct xtables_match *me)
 	xtables_pending_matches = me;
 }
 
+/**
+ * Compare two actions for their preference
+ * @a:	one action
+ * @b: 	another
+ *
+ * Like strcmp, returns a negative number if @a is less preferred than @b,
+ * positive number if @a is more preferred than @b, or zero if equally
+ * preferred.
+ */
+static int
+xtables_mt_prefer(bool a_alias, unsigned int a_rev, unsigned int a_fam,
+		  bool b_alias, unsigned int b_rev, unsigned int b_fam)
+{
+	/*
+	 * Alias ranks higher than no alias.
+	 * (We want the new action to be used whenever possible.)
+	 */
+	if (!a_alias && b_alias)
+		return -1;
+	if (a_alias && !b_alias)
+		return 1;
+
+	/* Higher revision ranks higher. */
+	if (a_rev < b_rev)
+		return -1;
+	if (a_rev > b_rev)
+		return 1;
+
+	/* NFPROTO_<specific> ranks higher than NFPROTO_UNSPEC. */
+	if (a_fam == NFPROTO_UNSPEC && b_fam != NFPROTO_UNSPEC)
+		return -1;
+	if (a_fam != NFPROTO_UNSPEC && b_fam == NFPROTO_UNSPEC)
+		return 1;
+
+	/* Must be the same thing. */
+	return 0;
+}
+
+static int xtables_match_prefer(const struct xtables_match *a,
+				const struct xtables_match *b)
+{
+	return xtables_mt_prefer(a->real_name != NULL,
+				 a->revision, a->family,
+				 b->real_name != NULL,
+				 b->revision, b->family);
+}
+
+static int xtables_target_prefer(const struct xtables_target *a,
+				 const struct xtables_target *b)
+{
+	/*
+	 * Note that if x->real_name==NULL, it will be set to x->name in
+	 * xtables_register_*; the direct pointer comparison here is therefore
+	 * legitimate to detect an alias.
+	 */
+	return xtables_mt_prefer(a->real_name != NULL,
+				 a->revision, a->family,
+				 b->real_name != NULL,
+				 b->revision, b->family);
+}
+
 static void xtables_fully_register_pending_match(struct xtables_match *me)
 {
 	struct xtables_match **i, *old;
+	const char *rn;
+	int compare;
 
 	old = xtables_find_match(me->name, XTF_DURING_LOAD, NULL);
 	if (old) {
-		if (old->revision == me->revision &&
-		    old->family == me->family) {
+		compare = xtables_match_prefer(old, me);
+		if (compare == 0) {
 			fprintf(stderr,
 				"%s: match `%s' already registered.\n",
 				xt_params->program_name, me->name);
@@ -877,16 +940,14 @@ static void xtables_fully_register_pending_match(struct xtables_match *me)
 		}
 
 		/* Now we have two (or more) options, check compatibility. */
-		if (compatible_match_revision(old->name, old->revision)
-		    && old->revision > me->revision)
+		rn = (old->real_name != NULL) ? old->real_name : old->name;
+		if (compare > 0 &&
+		    compatible_match_revision(rn, old->revision))
 			return;
 
 		/* See if new match can be used. */
-		if (!compatible_match_revision(me->name, me->revision))
-			return;
-
-		/* Prefer !AF_UNSPEC over AF_UNSPEC for same revision. */
-		if (old->revision == me->revision && me->family == AF_UNSPEC)
+		rn = (me->real_name != NULL) ? me->real_name : me->name;
+		if (!compatible_match_revision(rn, me->revision))
 			return;
 
 		/* Delete old one. */
@@ -962,13 +1023,15 @@ void xtables_register_target(struct xtables_target *me)
 static void xtables_fully_register_pending_target(struct xtables_target *me)
 {
 	struct xtables_target *old;
+	const char *rn;
+	int compare;
 
 	old = xtables_find_target(me->name, XTF_DURING_LOAD);
 	if (old) {
 		struct xtables_target **i;
 
-		if (old->revision == me->revision &&
-		    old->family == me->family) {
+		compare = xtables_target_prefer(old, me);
+		if (compare == 0) {
 			fprintf(stderr,
 				"%s: target `%s' already registered.\n",
 				xt_params->program_name, me->name);
@@ -976,16 +1039,14 @@ static void xtables_fully_register_pending_target(struct xtables_target *me)
 		}
 
 		/* Now we have two (or more) options, check compatibility. */
-		if (compatible_target_revision(old->name, old->revision)
-		    && old->revision > me->revision)
+		rn = (old->real_name != NULL) ? old->real_name : old->name;
+		if (compare > 0 &&
+		    compatible_target_revision(rn, old->revision))
 			return;
 
 		/* See if new target can be used. */
-		if (!compatible_target_revision(me->name, me->revision))
-			return;
-
-		/* Prefer !AF_UNSPEC over AF_UNSPEC for same revision. */
-		if (old->revision == me->revision && me->family == AF_UNSPEC)
+		rn = (me->real_name != NULL) ? me->real_name : me->name;
+		if (!compatible_target_revision(rn, me->revision))
 			return;
 
 		/* Delete old one. */
@@ -1012,6 +1073,28 @@ void xtables_register_targets(struct xtables_target *target, unsigned int n)
 	do {
 		xtables_register_target(&target[--n]);
 	} while (n > 0);
+}
+
+/* receives a list of xtables_rule_match, release them */
+void xtables_rule_matches_free(struct xtables_rule_match **matches)
+{
+	struct xtables_rule_match *matchp, *tmp;
+
+	for (matchp = *matches; matchp;) {
+		tmp = matchp->next;
+		if (matchp->match->m) {
+			free(matchp->match->m);
+			matchp->match->m = NULL;
+		}
+		if (matchp->match == matchp->match->next) {
+			free(matchp->match);
+			matchp->match = NULL;
+		}
+		free(matchp);
+		matchp = tmp;
+	}
+
+	*matches = NULL;
 }
 
 /**
@@ -1133,28 +1216,43 @@ const char *xtables_ipaddr_to_anyname(const struct in_addr *addr)
 	return xtables_ipaddr_to_numeric(addr);
 }
 
-const char *xtables_ipmask_to_numeric(const struct in_addr *mask)
+int xtables_ipmask_to_cidr(const struct in_addr *mask)
 {
-	static char buf[20];
 	uint32_t maskaddr, bits;
 	int i;
 
 	maskaddr = ntohl(mask->s_addr);
-
+	/* shortcut for /32 networks */
 	if (maskaddr == 0xFFFFFFFFL)
-		/* we don't want to see "/32" */
-		return "";
+		return 32;
 
 	i = 32;
 	bits = 0xFFFFFFFEL;
 	while (--i >= 0 && maskaddr != bits)
 		bits <<= 1;
 	if (i >= 0)
-		sprintf(buf, "/%d", i);
-	else
+		return i;
+
+	/* this mask cannot be converted to CIDR notation */
+	return -1;
+}
+
+const char *xtables_ipmask_to_numeric(const struct in_addr *mask)
+{
+	static char buf[20];
+	uint32_t cidr;
+
+	cidr = xtables_ipmask_to_cidr(mask);
+	if (cidr < 0) {
 		/* mask was not a decent combination of 1's and 0's */
 		sprintf(buf, "/%s", xtables_ipaddr_to_numeric(mask));
+		return buf;
+	} else if (cidr == 32) {
+		/* we don't want to see "/32" */
+		return "";
+	}
 
+	sprintf(buf, "/%d", cidr);
 	return buf;
 }
 
@@ -1465,7 +1563,7 @@ const char *xtables_ip6addr_to_anyname(const struct in6_addr *addr)
 	return xtables_ip6addr_to_numeric(addr);
 }
 
-static int ip6addr_prefix_length(const struct in6_addr *k)
+int xtables_ip6mask_to_cidr(const struct in6_addr *k)
 {
 	unsigned int bits = 0;
 	uint32_t a, b, c, d;
@@ -1492,7 +1590,7 @@ static int ip6addr_prefix_length(const struct in6_addr *k)
 const char *xtables_ip6mask_to_numeric(const struct in6_addr *addrp)
 {
 	static char buf[50+2];
-	int l = ip6addr_prefix_length(addrp);
+	int l = xtables_ip6mask_to_cidr(addrp);
 
 	if (l == -1) {
 		strcpy(buf, "/");
@@ -1812,6 +1910,35 @@ xtables_parse_protocol(const char *s)
 	xt_params->exit_err(PARAMETER_PROBLEM,
 		"unknown protocol \"%s\" specified", s);
 	return -1;
+}
+
+void xtables_print_num(uint64_t number, unsigned int format)
+{
+	if (!(format & FMT_KILOMEGAGIGA)) {
+		printf(FMT("%8llu ","%llu "), (unsigned long long)number);
+		return;
+	}
+	if (number <= 99999) {
+		printf(FMT("%5llu ","%llu "), (unsigned long long)number);
+		return;
+	}
+	number = (number + 500) / 1000;
+	if (number <= 9999) {
+		printf(FMT("%4lluK ","%lluK "), (unsigned long long)number);
+		return;
+	}
+	number = (number + 500) / 1000;
+	if (number <= 9999) {
+		printf(FMT("%4lluM ","%lluM "), (unsigned long long)number);
+		return;
+	}
+	number = (number + 500) / 1000;
+	if (number <= 9999) {
+		printf(FMT("%4lluG ","%lluG "), (unsigned long long)number);
+		return;
+	}
+	number = (number + 500) / 1000;
+	printf(FMT("%4lluT ","%lluT "), (unsigned long long)number);
 }
 
 int kernel_version;
