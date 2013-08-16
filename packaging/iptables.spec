@@ -2,7 +2,7 @@ Name:           iptables
 %define lname_ipq	libipq
 %define lname_iptc	libiptc
 %define lname_xt	libxtables
-Version:        1.4.14
+Version:        1.4.19.1
 Release:        0
 License:        GPL-2.0+
 Summary:        IP Packet Filter Administration utilities
@@ -23,7 +23,6 @@ packet filter rules in the Linux kernel. This version requires kernel
 
 %package -n %lname_ipq
 Summary:        Library to interface with the (old) ip_queue kernel mechanism
-Group:          Security/Network
 
 %description -n %lname_ipq
 The Netfilter project provides a mechanism (ip_queue) for passing
@@ -36,7 +35,6 @@ ip_queue/libipq is obsoleted by nf_queue/libnetfilter_queue!
 
 %package -n libipq-devel
 Summary:        Development files for the ip_queue kernel mechanism
-Group:          Development/Libraries
 Requires:       %lname_ipq = %{version}
 
 %description -n libipq-devel
@@ -48,9 +46,16 @@ be modified in userspace prior to reinjection back into the kernel.
 
 ip_queue/libipq is obsoleted by nf_queue/libnetfilter_queue!
 
+
+%package -n xtables-plugins
+Summary:        Match and Target Extension plugins for iptables
+Conflicts:      iptables < 1.4.18
+
+%description -n xtables-plugins
+Match and Target Extension plugins for iptables.
+
 %package -n %lname_iptc
 Summary:        Library for low-level ruleset generation and parsing
-Group:          Security/Network
 
 %description -n %lname_iptc
 libiptc ("iptables cache") is used to retrieve from the kernel, parse,
@@ -58,7 +63,6 @@ construct, and load new rulesets into the kernel.
 
 %package -n libiptc-devel
 Summary:        Development files for libiptc, a packet filter ruleset library
-Group:          Development/Libraries
 Requires:       %lname_iptc = %{version}
 # NOT adding Obsoletes/Provides: iptables-devel, because that one has
 # been split into _two_ new pkgs (libxtables-devel, libiptc-devel).
@@ -70,7 +74,6 @@ construct, and load new rulesets into the kernel.
 
 %package -n %lname_xt
 Summary:        iptables extension interface
-Group:          Security/Network
 
 %description -n %lname_xt
 This library contains all the iptables code shared between iptables,
@@ -79,7 +82,6 @@ iproute2's m_xt.
 
 %package -n libxtables-devel
 Summary:        Libraries, Headers and Development Man Pages for iptables
-Group:          Development/Libraries
 Requires:       %lname_xt = %{version}
 
 %description -n libxtables-devel
@@ -168,13 +170,23 @@ rm -f "%{buildroot}/%{_libdir}"/*.la;
 %files -n %lname_xt
 %manifest %{name}.manifest
 %defattr(-,root,root)
-%{_libdir}/libxtables.so.7*
+%{_libdir}/libxtables.so.*
+
+
+%files -n xtables-plugins
+%defattr(-,root,root)
+%dir %_sysconfdir/xtables/
+%config %_sysconfdir/xtables/*.conf
+%_libdir/xtables/
+%_sbindir/nfnl_osf
+%_datadir/xtables/
 
 %files -n libxtables-devel
 %manifest %{name}.manifest
 %defattr(-,root,root)
 %dir %{_includedir}/%{name}-%{version}
 %{_includedir}/%{name}-%{version}/xtables.h
+%{_includedir}/%{name}-%{version}/xtables-version.h
 %{_libdir}/libxtables.so
 %{_libdir}/pkgconfig/xtables.pc
 
