@@ -305,8 +305,8 @@ static char *get_modprobe(void)
 {
 	int procfile;
 	char *ret;
+	int count;
 
-#define PROCFILE_BUFSIZ	1024
 	procfile = open(PROC_SYS_MODPROBE, O_RDONLY);
 	if (procfile < 0)
 		return NULL;
@@ -316,19 +316,19 @@ static char *get_modprobe(void)
 		exit(1);
 	}
 
-	ret = malloc(PROCFILE_BUFSIZ);
+	ret = malloc(PATH_MAX);
 	if (ret) {
-		memset(ret, 0, PROCFILE_BUFSIZ);
-		switch (read(procfile, ret, PROCFILE_BUFSIZ)) {
-		case -1: goto fail;
-		case PROCFILE_BUFSIZ: goto fail; /* Partial read.  Wierd */
+		count = read(procfile, ret, PATH_MAX);
+		if (count > 0 && count < PATH_MAX)
+		{
+			if (ret[count - 1] == '\n')
+				ret[count - 1] = '\0';
+			else
+				ret[count] = '\0';
+			close(procfile);
+			return ret;
 		}
-		if (ret[strlen(ret)-1]=='\n') 
-			ret[strlen(ret)-1]=0;
-		close(procfile);
-		return ret;
 	}
- fail:
 	free(ret);
 	close(procfile);
 	return NULL;
@@ -578,8 +578,6 @@ static void *load_extension(const char *search_path, const char *af_prefix,
 			if (ptr != NULL)
 				return ptr;
 
-			fprintf(stderr, "%s: no \"%s\" extension found for "
-				"this protocol\n", path, name);
 			errno = ENOENT;
 			return NULL;
 		}
@@ -1243,7 +1241,7 @@ const char *xtables_ipmask_to_numeric(const struct in_addr *mask)
 	uint32_t cidr;
 
 	cidr = xtables_ipmask_to_cidr(mask);
-	if (cidr < 0) {
+	if (cidr == (unsigned int)-1) {
 		/* mask was not a decent combination of 1's and 0's */
 		sprintf(buf, "/%s", xtables_ipaddr_to_numeric(mask));
 		return buf;
@@ -1597,7 +1595,11 @@ const char *xtables_ip6mask_to_numeric(const struct in6_addr *addrp)
 		strcat(buf, xtables_ip6addr_to_numeric(addrp));
 		return buf;
 	}
-	sprintf(buf, "/%d", l);
+	/* we don't want to see "/128" */
+	if (l == 128)
+		return "";
+	else
+		sprintf(buf, "/%d", l);
 	return buf;
 }
 

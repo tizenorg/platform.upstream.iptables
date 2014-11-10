@@ -53,10 +53,11 @@ PRE_UNINSTALL = :
 POST_UNINSTALL = :
 build_triplet = @build@
 host_triplet = @host@
-sbin_PROGRAMS = $(am__EXEEXT_1) $(am__EXEEXT_2)
+sbin_PROGRAMS = $(am__EXEEXT_1) $(am__EXEEXT_2) $(am__EXEEXT_3)
 @HAVE_LIBNFNETLINK_TRUE@am__append_1 = nfnl_osf
 @HAVE_LIBNFNETLINK_TRUE@am__append_2 = pf.os
 @ENABLE_BPFC_TRUE@am__append_3 = nfbpf_compile
+@ENABLE_SYNCONF_TRUE@am__append_4 = nfsynproxy
 subdir = utils
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
@@ -72,6 +73,7 @@ CONFIG_CLEAN_FILES =
 CONFIG_CLEAN_VPATH_FILES =
 @HAVE_LIBNFNETLINK_TRUE@am__EXEEXT_1 = nfnl_osf$(EXEEXT)
 @ENABLE_BPFC_TRUE@am__EXEEXT_2 = nfbpf_compile$(EXEEXT)
+@ENABLE_SYNCONF_TRUE@am__EXEEXT_3 = nfsynproxy$(EXEEXT)
 am__installdirs = "$(DESTDIR)$(sbindir)" "$(DESTDIR)$(pkgdatadir)"
 PROGRAMS = $(sbin_PROGRAMS)
 nfbpf_compile_SOURCES = nfbpf_compile.c
@@ -81,6 +83,9 @@ nfnl_osf_SOURCES = nfnl_osf.c
 nfnl_osf_OBJECTS = nfnl_osf.$(OBJEXT)
 am__DEPENDENCIES_1 =
 @HAVE_LIBNFNETLINK_TRUE@nfnl_osf_DEPENDENCIES = $(am__DEPENDENCIES_1)
+nfsynproxy_SOURCES = nfsynproxy.c
+nfsynproxy_OBJECTS = nfsynproxy.$(OBJEXT)
+nfsynproxy_DEPENDENCIES =
 DEFAULT_INCLUDES = -I.@am__isrc@ -I$(top_builddir)
 depcomp = $(SHELL) $(top_srcdir)/build-aux/depcomp
 am__depfiles_maybe = depfiles
@@ -94,8 +99,8 @@ CCLD = $(CC)
 LINK = $(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) \
 	--mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) \
 	$(LDFLAGS) -o $@
-SOURCES = nfbpf_compile.c nfnl_osf.c
-DIST_SOURCES = nfbpf_compile.c nfnl_osf.c
+SOURCES = nfbpf_compile.c nfnl_osf.c nfsynproxy.c
+DIST_SOURCES = nfbpf_compile.c nfnl_osf.c nfsynproxy.c
 am__can_run_installinfo = \
   case $$AM_UPDATE_INFO_DIR in \
     n|no|NO) false;; \
@@ -237,6 +242,8 @@ ksourcedir = @ksourcedir@
 libdir = @libdir@
 libexecdir = @libexecdir@
 libiptc_LDFLAGS2 = @libiptc_LDFLAGS2@
+libnetfilter_conntrack_CFLAGS = @libnetfilter_conntrack_CFLAGS@
+libnetfilter_conntrack_LIBS = @libnetfilter_conntrack_LIBS@
 libnfnetlink_CFLAGS = @libnfnetlink_CFLAGS@
 libnfnetlink_LIBS = @libnfnetlink_LIBS@
 libxtables_vage = @libxtables_vage@
@@ -271,6 +278,7 @@ AM_CPPFLAGS = ${regular_CPPFLAGS} -I${top_builddir}/include \
 pkgdata_DATA = $(am__append_2)
 @HAVE_LIBNFNETLINK_TRUE@nfnl_osf_LDADD = ${libnfnetlink_LIBS}
 @ENABLE_BPFC_TRUE@nfbpf_compile_LDADD = -lpcap
+@ENABLE_SYNCONF_TRUE@nfsynproxy_LDADD = -lpcap
 all: all-am
 
 .SUFFIXES:
@@ -357,6 +365,9 @@ nfbpf_compile$(EXEEXT): $(nfbpf_compile_OBJECTS) $(nfbpf_compile_DEPENDENCIES) $
 nfnl_osf$(EXEEXT): $(nfnl_osf_OBJECTS) $(nfnl_osf_DEPENDENCIES) $(EXTRA_nfnl_osf_DEPENDENCIES) 
 	@rm -f nfnl_osf$(EXEEXT)
 	$(LINK) $(nfnl_osf_OBJECTS) $(nfnl_osf_LDADD) $(LIBS)
+nfsynproxy$(EXEEXT): $(nfsynproxy_OBJECTS) $(nfsynproxy_DEPENDENCIES) $(EXTRA_nfsynproxy_DEPENDENCIES) 
+	@rm -f nfsynproxy$(EXEEXT)
+	$(LINK) $(nfsynproxy_OBJECTS) $(nfsynproxy_LDADD) $(LIBS)
 
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT)
@@ -366,6 +377,7 @@ distclean-compile:
 
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/nfbpf_compile.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/nfnl_osf.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/nfsynproxy.Po@am__quote@
 
 .c.o:
 @am__fastdepCC_TRUE@	$(COMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ $<

@@ -62,7 +62,9 @@ static const struct xt_option_entry recent_opts_v1[] = {
 	{.name = "remove", .id = O_REMOVE, .type = XTTYPE_NONE,
 	 .excl = F_ANY_OP, .flags = XTOPT_INVERT},
 	{.name = "seconds", .id = O_SECONDS, .type = XTTYPE_UINT32,
-	 .flags = XTOPT_PUT, XTOPT_POINTER(s, seconds)},
+	 .flags = XTOPT_PUT, XTOPT_POINTER(s, seconds), .min = 1},
+	{.name = "reap", .id = O_REAP, .type = XTTYPE_NONE,
+	 .also = F_SECONDS },
 	{.name = "hitcount", .id = O_HITCOUNT, .type = XTTYPE_UINT32,
 	 .flags = XTOPT_PUT, XTOPT_POINTER(s, hit_count)},
 	{.name = "rttl", .id = O_RTTL, .type = XTTYPE_NONE,
@@ -102,7 +104,7 @@ static void recent_help(void)
 "    --rsource                   Match/Save the source address of each packet in the recent list table (default).\n"
 "    --rdest                     Match/Save the destination address of each packet in the recent list table.\n"
 "    --mask netmask              Netmask that will be applied to this recent list.\n"
-"xt_recent by: Stephen Frost <sfrost@snowman.net>.  http://snowman.net/projects/ipt_recent/\n");
+"xt_recent by: Stephen Frost <sfrost@snowman.net>.\n");
 }
 
 enum {

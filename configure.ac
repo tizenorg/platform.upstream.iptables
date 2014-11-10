@@ -1,5 +1,5 @@
 
-AC_INIT([iptables], [1.4.19.1])
+AC_INIT([iptables], [1.4.21])
 
 # See libtool.info "Libtool's versioning system"
 libxtables_vcurrent=10
@@ -49,10 +49,14 @@ AC_ARG_ENABLE([devel],
 	[Install Xtables development headers]),
 	[enable_devel="$enableval"], [enable_devel="yes"])
 AC_ARG_ENABLE([libipq],
-	AS_HELP_STRING([--enable-libipq], [Build and install libipq]))
+	AS_HELP_STRING([--enable-libipq], [Build and install libipq]),
+	[enable_libipq="$enableval"], [enable_libipq="no"])
 AC_ARG_ENABLE([bpf-compiler],
 	AS_HELP_STRING([--enable-bpf-compiler], [Build bpf compiler]),
-	[enable_bpfc="yes"])
+	[enable_bpfc="yes"], [enable_bpfc="no"])
+AC_ARG_ENABLE([nfsynproxy],
+	AS_HELP_STRING([--enable-nfsynproxy], [Build SYNPROXY configuration tool]),
+	[enable_nfsynproxy="yes"], [enable_nfsynproxy="no"])
 AC_ARG_WITH([pkgconfigdir], AS_HELP_STRING([--with-pkgconfigdir=PATH],
 	[Path to the pkgconfig directory [[LIBDIR/pkgconfig]]]),
 	[pkgconfigdir="$withval"], [pkgconfigdir='${libdir}/pkgconfig'])
@@ -81,6 +85,15 @@ if test "$ac_cv_header_linux_ip_vs_h" != "yes"; then
 	blacklist_modules="$blacklist_modules ipvs";
 fi;
 
+PKG_CHECK_MODULES([libnetfilter_conntrack], [libnetfilter_conntrack >= 1.0.4],
+	[nfconntrack=1], [nfconntrack=0])
+AM_CONDITIONAL([HAVE_LIBNETFILTER_CONNTRACK], [test "$nfconntrack" = 1])
+
+if test "$nfconntrack" -ne 1; then
+	blacklist_modules="$blacklist_modules connlabel";
+	echo "WARNING: libnetfilter_conntrack not found, connlabel match will not be built";
+fi;
+
 AC_SUBST([blacklist_modules])
 AC_CHECK_SIZEOF([struct ip6_hdr], [], [#include <netinet/ip6.h>])
 
@@ -92,6 +105,11 @@ AM_CONDITIONAL([ENABLE_LARGEFILE], [test "$enable_largefile" = "yes"])
 AM_CONDITIONAL([ENABLE_DEVEL], [test "$enable_devel" = "yes"])
 AM_CONDITIONAL([ENABLE_LIBIPQ], [test "$enable_libipq" = "yes"])
 AM_CONDITIONAL([ENABLE_BPFC], [test "$enable_bpfc" = "yes"])
+AM_CONDITIONAL([ENABLE_SYNCONF], [test "$enable_nfsynproxy" = "yes"])
+
+if test "x$enable_bpfc" = "xyes" || test "x$enable_nfsynproxy" = "xyes"; then
+	AC_CHECK_LIB(pcap, pcap_compile,, AC_MSG_ERROR(missing libpcap library required by bpf compiler or nfsynproxy tool))
+fi
 
 PKG_CHECK_MODULES([libnfnetlink], [libnfnetlink >= 1.0],
 	[nfnetlink=1], [nfnetlink=0])
@@ -104,12 +122,26 @@ regular_CPPFLAGS="${largefile_cppflags} -D_REENTRANT \
 	-DXTABLES_LIBDIR=\\\"\${xtlibdir}\\\" -DXTABLES_INTERNAL";
 kinclude_CPPFLAGS="";
 if [[ -n "$kbuilddir" ]]; then
-	kinclude_CPPFLAGS="$kinclude_CPPFLAGS -I$kbuilddir/include";
+	kinclude_CPPFLAGS="$kinclude_CPPFLAGS -I$kbuilddir/include/uapi -I$kbuilddir/include";
 fi;
 if [[ -n "$ksourcedir" ]]; then
-	kinclude_CPPFLAGS="$kinclude_CPPFLAGS -I$ksourcedir/include";
+	kinclude_CPPFLAGS="$kinclude_CPPFLAGS -I$ksourcedir/include/uapi -I$ksourcedir/include";
 fi;
 pkgdatadir='${datadir}/xtables';
+
+define([EXPAND_VARIABLE],
+[$2=[$]$1
+if test $prefix = 'NONE'; then
+	prefix="/usr/local"
+fi
+while true; do
+  case "[$]$2" in
+    *\[$]* ) eval "$2=[$]$2" ;;
+    *) break ;;
+  esac
+done
+eval "$2=[$]$2"
+])dnl EXPAND_VARIABLE
 
 AC_SUBST([regular_CFLAGS])
 AC_SUBST([regular_CPPFLAGS])
@@ -127,9 +159,46 @@ AC_SUBST([libxtables_vmajor])
 
 AC_CONFIG_FILES([Makefile extensions/GNUmakefile include/Makefile
 	iptables/Makefile iptables/xtables.pc
+	iptables/iptables.8 iptables/iptables-extensions.8.tmpl
+	iptables/iptables-save.8 iptables/iptables-restore.8
+	iptables/iptables-apply.8 iptables/iptables-xml.1
 	libipq/Makefile libipq/libipq.pc
 	libiptc/Makefile libiptc/libiptc.pc
 	libiptc/libip4tc.pc libiptc/libip6tc.pc
 	libxtables/Makefile utils/Makefile
 	include/xtables-version.h include/iptables/internal.h])
 AC_OUTPUT
+
+
+EXPAND_VARIABLE(xtlibdir, e_xtlibdir)
+EXPAND_VARIABLE(pkgconfigdir, e_pkgconfigdir)
+
+echo "
+Iptables Configuration:
+  IPv4 support:				${enable_ipv4}
+  IPv6 support:				${enable_ipv6}
+  Devel support:			${enable_devel}
+  IPQ support:				${enable_libipq}
+  Large file support:			${enable_largefile}
+  BPF utils support:			${enable_bpfc}
+  nfsynproxy util support:		${enable_nfsynproxy}
+
+Build parameters:
+  Put plugins into executable (static):	${enable_static}
+  Support plugins via dlopen (shared):	${enable_shared}
+  Installation prefix (--prefix):	${prefix}
+  Xtables extension directory:		${e_xtlibdir}
+  Pkg-config directory:			${e_pkgconfigdir}"
+
+if [[ -n "$ksourcedir" ]]; then
+	echo "  Kernel source directory:		${ksourcedir}"
+fi;
+if [[ -n "$kbuilddir" ]]; then
+	echo "  Kernel build directory:		${kbuilddir}"
+fi;
+
+echo "  Host:					${host}
+  GCC binary:				${CC}"
+
+test x"$blacklist_modules" = "x" || echo "
+Iptables modules that will not be built: $blacklist_modules"

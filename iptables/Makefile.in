@@ -67,6 +67,10 @@ host_triplet = @host@
 sbin_PROGRAMS = xtables-multi$(EXEEXT)
 subdir = iptables
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in \
+	$(srcdir)/iptables-apply.8.in \
+	$(srcdir)/iptables-extensions.8.tmpl.in \
+	$(srcdir)/iptables-restore.8.in $(srcdir)/iptables-save.8.in \
+	$(srcdir)/iptables-xml.1.in $(srcdir)/iptables.8.in \
 	$(srcdir)/xtables.pc.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/m4/ax_check_linker_flags.m4 \
@@ -77,7 +81,9 @@ am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 	$(ACLOCAL_M4)
 mkinstalldirs = $(install_sh) -d
 CONFIG_HEADER = $(top_builddir)/config.h
-CONFIG_CLEAN_FILES = xtables.pc
+CONFIG_CLEAN_FILES = xtables.pc iptables.8 iptables-extensions.8.tmpl \
+	iptables-save.8 iptables-restore.8 iptables-apply.8 \
+	iptables-xml.1
 CONFIG_CLEAN_VPATH_FILES =
 am__installdirs = "$(DESTDIR)$(sbindir)" "$(DESTDIR)$(man1dir)" \
 	"$(DESTDIR)$(man8dir)" "$(DESTDIR)$(pkgconfigdir)"
@@ -265,6 +271,8 @@ ksourcedir = @ksourcedir@
 libdir = @libdir@
 libexecdir = @libexecdir@
 libiptc_LDFLAGS2 = @libiptc_LDFLAGS2@
+libnetfilter_conntrack_CFLAGS = @libnetfilter_conntrack_CFLAGS@
+libnetfilter_conntrack_LIBS = @libnetfilter_conntrack_LIBS@
 libnfnetlink_CFLAGS = @libnfnetlink_CFLAGS@
 libnfnetlink_LIBS = @libnfnetlink_LIBS@
 libxtables_vage = @libxtables_vage@
@@ -304,7 +312,7 @@ man_MANS = iptables.8 iptables-restore.8 iptables-save.8 \
                    iptables-xml.1 ip6tables.8 ip6tables-restore.8 \
                    ip6tables-save.8 iptables-extensions.8
 
-CLEANFILES = iptables.8 ip6tables.8
+CLEANFILES = iptables.8
 vx_bin_links = iptables-xml
 @ENABLE_IPV4_TRUE@v4_sbin_links = iptables iptables-restore iptables-save
 @ENABLE_IPV6_TRUE@v6_sbin_links = ip6tables ip6tables-restore ip6tables-save
@@ -344,6 +352,18 @@ $(ACLOCAL_M4):  $(am__aclocal_m4_deps)
 	cd $(top_builddir) && $(MAKE) $(AM_MAKEFLAGS) am--refresh
 $(am__aclocal_m4_deps):
 xtables.pc: $(top_builddir)/config.status $(srcdir)/xtables.pc.in
+	cd $(top_builddir) && $(SHELL) ./config.status $(subdir)/$@
+iptables.8: $(top_builddir)/config.status $(srcdir)/iptables.8.in
+	cd $(top_builddir) && $(SHELL) ./config.status $(subdir)/$@
+iptables-extensions.8.tmpl: $(top_builddir)/config.status $(srcdir)/iptables-extensions.8.tmpl.in
+	cd $(top_builddir) && $(SHELL) ./config.status $(subdir)/$@
+iptables-save.8: $(top_builddir)/config.status $(srcdir)/iptables-save.8.in
+	cd $(top_builddir) && $(SHELL) ./config.status $(subdir)/$@
+iptables-restore.8: $(top_builddir)/config.status $(srcdir)/iptables-restore.8.in
+	cd $(top_builddir) && $(SHELL) ./config.status $(subdir)/$@
+iptables-apply.8: $(top_builddir)/config.status $(srcdir)/iptables-apply.8.in
+	cd $(top_builddir) && $(SHELL) ./config.status $(subdir)/$@
+iptables-xml.1: $(top_builddir)/config.status $(srcdir)/iptables-xml.1.in
 	cd $(top_builddir) && $(SHELL) ./config.status $(subdir)/$@
 install-sbinPROGRAMS: $(sbin_PROGRAMS)
 	@$(NORMAL_INSTALL)
@@ -928,15 +948,8 @@ uninstall-man: uninstall-man1 uninstall-man8
 	uninstall-man8 uninstall-pkgconfigDATA uninstall-sbinPROGRAMS
 
 
-iptables.8: ${srcdir}/iptables.8.in
-	${AM_VERBOSE_GEN} sed -e 's/@PACKAGE_AND_VERSION@/${PACKAGE} ${PACKAGE_VERSION}/g' $< >$@;
-
-ip6tables.8: ${srcdir}/ip6tables.8.in
-	${AM_VERBOSE_GEN} sed -e 's/@PACKAGE_AND_VERSION@/${PACKAGE} ${PACKAGE_VERSION}/g' $< >$@;
-
-iptables-extensions.8: ${srcdir}/iptables-extensions.8.in ../extensions/matches.man ../extensions/targets.man
-	${AM_VERBOSE_GEN} sed -e \
-		's/@PACKAGE_AND_VERSION@/${PACKAGE} ${PACKAGE_VERSION}/g' \
+iptables-extensions.8: iptables-extensions.8.tmpl ../extensions/matches.man ../extensions/targets.man
+	${AM_VERBOSE_GEN} sed \
 		-e '/@MATCH@/ r ../extensions/matches.man' \
 		-e '/@TARGET@/ r ../extensions/targets.man' $< >$@;
 
