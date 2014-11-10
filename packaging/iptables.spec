@@ -2,7 +2,7 @@ Name:           iptables
 %define lname_ipq	libipq
 %define lname_iptc	libiptc
 %define lname_xt	libxtables
-Version:        1.4.19.1
+Version:        1.4.21
 Release:        0
 License:        GPL-2.0+
 Summary:        IP Packet Filter Administration utilities
@@ -175,8 +175,6 @@ rm -f "%{buildroot}/%{_libdir}"/*.la;
 
 %files -n xtables-plugins
 %defattr(-,root,root)
-%dir %_sysconfdir/xtables/
-%config %_sysconfdir/xtables/*.conf
 %_libdir/xtables/
 %_sbindir/nfnl_osf
 %_datadir/xtables/
