@@ -112,6 +112,10 @@ install -m0644 iptables/iptables-apply.8 %{buildroot}%{_mandir}/man8/
 rm -f "%{buildroot}/%{_libdir}"/*.la;
 %fdupes %{buildroot}
 
+# License
+mkdir -p %{buildroot}%{_datadir}/license
+cp COPYING %{buildroot}%{_datadir}/license/iptables
+
 %post -n %lname_ipq -p /sbin/ldconfig
 
 %postun -n %lname_ipq -p /sbin/ldconfig
@@ -130,7 +134,6 @@ rm -f "%{buildroot}/%{_libdir}"/*.la;
 %files
 %manifest %{name}.manifest
 %defattr(-,root,root)
-%license COPYING
 %{_bindir}/iptables*
 %{_sbindir}/iptables*
 %{_sbindir}/ip6tables*
@@ -138,6 +141,7 @@ rm -f "%{buildroot}/%{_libdir}"/*.la;
 %{_sbindir}/nfnl_osf
 %{_libdir}/xtables
 %{_datadir}/xtables
+%{_datadir}/license/iptables
 
 %files -n %lname_ipq
 %manifest %{name}.manifest
