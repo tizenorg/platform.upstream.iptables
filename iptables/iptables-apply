@@ -111,7 +111,7 @@ if [[ ! -r "$FILE" ]]; then
 	exit 2
 fi
 
-COMMANDS=(mktemp "$SAVE" "$RESTORE")
+COMMANDS=(tempfile "$SAVE" "$RESTORE")
 
 for cmd in "${COMMANDS[@]}"; do
 	if ! command -v $cmd >/dev/null; then
@@ -122,7 +122,7 @@ done
 
 umask 0700
 
-TMPFILE=$(mktemp)
+TMPFILE=$(tempfile -p iptap)
 trap "rm -f $TMPFILE" EXIT 1 2 3 4 5 6 7 8 10 11 12 13 14 15
 
 if ! "$SAVE" >"$TMPFILE"; then

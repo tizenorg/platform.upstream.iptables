@@ -7,6 +7,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <xtables.h>
+#define __aligned_u64 __u64 __attribute__((aligned(8)))
 #include <linux/if_packet.h>
 #include <linux/netfilter/xt_pkttype.h>
 

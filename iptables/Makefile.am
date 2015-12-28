@@ -24,15 +24,7 @@ endif
 xtables_multi_SOURCES += xshared.c
 xtables_multi_LDADD   += ../libxtables/libxtables.la -lm
 
-iptables_batch_SOURCES    = iptables-batch.c iptables.c xshared.c
-iptables_batch_LDFLAGS    = ${xtables_multi_LDFLAGS}
-iptables_batch_LDADD      = ${xtables_multi_LDADD}
-ip6tables_batch_SOURCES   = iptables-batch.c ip6tables.c xshared.c
-ip6tables_batch_CFLAGS    = ${AM_CFLAGS} -DIP6T
-ip6tables_batch_LDFLAGS   = ${xtables_multi_LDFLAGS}
-ip6tables_batch_LDADD     = ${xtables_multi_LDADD}
-
-sbin_PROGRAMS    = xtables-multi iptables-batch ip6tables-batch
+sbin_PROGRAMS    = xtables-multi
 man_MANS         = iptables.8 iptables-restore.8 iptables-save.8 \
                    iptables-xml.1 ip6tables.8 ip6tables-restore.8 \
                    ip6tables-save.8 iptables-extensions.8
