@@ -76,7 +76,7 @@ cp COPYING %{buildroot}%{_datadir}/license/iptables
 %manifest iptables.manifest
 %{_sbindir}/iptables*
 %{_sbindir}/ip6tables*
-%{_sbindir}/xtables-multi
+%caps(cap_net_admin,cap_net_raw=ei) %{_sbindir}/xtables-multi
 %{_bindir}/iptables-xml
 %dir %{_libdir}/xtables
 %{_libdir}/xtables/libipt*
